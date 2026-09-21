@@ -30,6 +30,13 @@ app.use(
   })
 );
 
+// Health Check
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok"
+  });
+});
+
 app.use("/api", blogRoute);
 
 // Static files

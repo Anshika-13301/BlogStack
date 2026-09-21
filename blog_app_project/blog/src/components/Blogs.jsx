@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_URL } from "../config";
 
 const Categories = [
   "All",
@@ -11,7 +12,7 @@ const Categories = [
   "Database",
 ];
 
-const Blogs = ({searchTerm}) => {
+const Blogs = ({ searchTerm }) => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [blogs, setBlogs] = useState([]);
 
@@ -20,18 +21,20 @@ const Blogs = ({searchTerm}) => {
       ? blogs
       : blogs.filter((blog) => blog.category === activeCategory);
 
-      const filteredBlogs = searchTerm ? filterByCategory.filter((blog)=>{
+  const filteredBlogs = searchTerm
+    ? filterByCategory.filter((blog) => {
         const term = searchTerm.toLowerCase();
-        return(
-          blog.title?.toLowerCase().includes(term)||
-            blog.category?.toLowerCase().includes(term)||
-              blog.subTitle?.toLowerCase().includes(term)
-        )
-      }) : filterByCategory
 
+        return (
+          blog.title?.toLowerCase().includes(term) ||
+          blog.category?.toLowerCase().includes(term) ||
+          blog.subTitle?.toLowerCase().includes(term)
+        );
+      })
+    : filterByCategory;
 
   useEffect(() => {
-    fetch("/api/user-blog-data")
+    fetch(`${API_URL}/api/user-blog-data`)
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
@@ -45,6 +48,7 @@ const Blogs = ({searchTerm}) => {
   return (
     <div className="py-1 px-4 m-14">
       <div className="max-w-7xl mx-auto">
+
         {/* Category Buttons */}
         <div className="flex flex-wrap justify-center gap-4 mb-10">
           {Categories.map((cat) => (
@@ -63,40 +67,52 @@ const Blogs = ({searchTerm}) => {
             </button>
           ))}
         </div>
+
       </div>
+
       {/* Blog Cards */}
 
-      {
-        filteredBlogs.length === 0 ? 
+      {filteredBlogs.length === 0 ? (
         <div className="text-center text-gray-600 py-20">
           No blogs match your search. Try a different Keyword or category
-        </div>: <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {filteredBlogs.map((blog) => (
-          <Link key={blog._id} to={`/blog-details/${blog._id}`}>
-            <div className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow hover:shadow-blue-200 transition h-full">
-              {/* image */}
-              <img
-                src={`http://localhost:5000/uploads/${blog.blogImage}`}
-                alt={blog.title}
-                className="w-full h-48 object-cover"
-              />
-              {/* Content */}
-              <div className="p-5">
-                {/* Category tag */}
-                <span className="text-sm bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
-                  {blog.category}
-                </span>
-                {/* Title */}
-                <h2 className="mt-3 font-semibold text-lg ">{blog.title}</h2>
-               
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-      }
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
 
-     
+          {filteredBlogs.map((blog) => (
+            <Link
+              key={blog._id}
+              to={`/blog-details/${blog._id}`}
+            >
+              <div className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow hover:shadow-blue-200 transition h-full">
+
+                {/* Image */}
+                <img
+                  src={`${API_URL}/uploads/${blog.blogImage}`}
+                  alt={blog.title}
+                  className="w-full h-48 object-cover"
+                />
+
+                {/* Content */}
+                <div className="p-5">
+
+                  {/* Category */}
+                  <span className="text-sm bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
+                    {blog.category}
+                  </span>
+
+                  {/* Title */}
+                  <h2 className="mt-3 font-semibold text-lg">
+                    {blog.title}
+                  </h2>
+
+                </div>
+              </div>
+            </Link>
+          ))}
+
+        </div>
+      )}
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import UploadImage from "../assets/image-upload.png";
 import Quill from "quill";
-import {toast} from "react-hot-toast"
-import {useNavigate} from "react-router-dom"
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { API_URL } from "../config";
 
 const CreateBlog = () => {
-  const [image, setImage] = useState(false);
+  const [image, setImage] = useState(null);
   const [blogTitle, setBlogTitle] = useState("");
   const [blogSubTitle, setBlogSubTitle] = useState("");
   const [blogCategory, setblogCategory] = useState("");
@@ -15,96 +16,116 @@ const CreateBlog = () => {
   const EditorQuill = useRef(null);
   const QuillRef = useRef(null);
 
-  const navigate = useNavigate()
-  
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!QuillRef.current && EditorQuill.current) {
-      QuillRef.current = new Quill(EditorQuill.current, { theme: "snow" });
+      QuillRef.current = new Quill(EditorQuill.current, {
+        theme: "snow",
+      });
+
+      QuillRef.current.on("text-change", () => {
+        setblogDesc(QuillRef.current.root.innerHTML);
+      });
     }
 
-    QuillRef.current.on("text-change",()=>{
-      setblogDesc(QuillRef.current.root.innerHTML)
-    })
-
+    return () => {
+      if (QuillRef.current) {
+        QuillRef.current = null;
+      }
+    };
   }, []);
 
   function handleForm(e) {
     e.preventDefault();
 
-    // const formData = {
-    //   blogTitle,
-    //   blogSubTitle,
-    //   blogCategory,
-    //   blogDesc,
-    //   blogAction
-    // }
+    if (!image) {
+      toast.error("Please select a blog image");
+      return;
+    }
 
-    const formData = new FormData()
-    formData.append("blogTitle",blogTitle)
-    formData.append("blogSubTitle",blogSubTitle)
-    formData.append("blogCategory",blogCategory)
-    formData.append("blogDesc",blogDesc)
-    formData.append("blogAction",blogAction)
-    formData.append("image",image)
+    const formData = new FormData();
 
-    let token = localStorage.getItem("token")
+    formData.append("blogTitle", blogTitle);
+    formData.append("blogSubTitle", blogSubTitle);
+    formData.append("blogCategory", blogCategory);
+    formData.append("blogDesc", blogDesc);
+    formData.append("blogAction", blogAction);
+    formData.append("image", image);
 
-    fetch("/api/create-blog",{
-      headers:{
-        Authorization:token
+    const token = localStorage.getItem("token");
+
+    fetch(`${API_URL}/api/create-blog`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
-      method:"POST",
-      body:formData
-    }).then((res)=>{return res.json()}).then((data)=>{
-      if(data.success){
-          toast.success(data.message)
-          navigate("/admin/blogs")
-      }else{
-        toast.error(data.message)
-      }
+      body: formData,
     })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          toast.success(data.message);
+          navigate("/admin/blogs");
+        } else {
+          toast.error(data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Create blog error:", error);
+        toast.error("Unable to connect to server");
+      });
   }
 
   return (
     <div className="flex mt-16">
       <div className="flex-1 p-10 min-h-screen">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Add Blog 🅱️</h1>
+
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">
+          Add Blog 🅱️
+        </h1>
+
         <form
-          action=""
           className="bg-white shadow-md rounded-xl p-6 max-w-5xl mx-auto space-y-6 mt-5"
           onSubmit={handleForm}
-         method="post" enctype="multipart/form-data"
         >
+
+          {/* Upload Image */}
           <label
             htmlFor="image"
             className="block text-gray-700 font-medium mb-1"
           >
             Upload Image
+
             <img
-              src={!image ? UploadImage : URL.createObjectURL(image)}
-              alt=""
+              src={
+                !image
+                  ? UploadImage
+                  : URL.createObjectURL(image)
+              }
+              alt="Blog preview"
               className="mt-2 h-16 rounded cursor-pointer"
             />
+
             <input
               type="file"
-              name=""
+              name="image"
               id="image"
               hidden
-              required
+              accept="image/*"
               onChange={(e) => {
                 setImage(e.target.files[0]);
               }}
             />
           </label>
 
-          <label htmlFor="" className="block text-gray-700 font-medium mb-1">
+          {/* Blog Title */}
+          <label className="block text-gray-700 font-medium mb-1">
             Blog Title
           </label>
+
           <input
             type="text"
-            name=""
-            id=""
             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type here.."
             value={blogTitle}
@@ -113,13 +134,13 @@ const CreateBlog = () => {
             }}
           />
 
-          <label htmlFor="" className="block text-gray-700 font-medium mb-1">
+          {/* Sub Title */}
+          <label className="block text-gray-700 font-medium mb-1">
             Sub Title
           </label>
+
           <input
             type="text"
-            name=""
-            id=""
             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Type here.."
             value={blogSubTitle}
@@ -128,14 +149,17 @@ const CreateBlog = () => {
             }}
           />
 
-          <label htmlFor="" className="block text-gray-700 font-medium mb-1">
+          {/* Category */}
+          <label className="block text-gray-700 font-medium mb-1">
             Blog Category
           </label>
+
           <select
-            name=""
-            id=""
             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e)=>{setblogCategory(e.target.value)}}
+            value={blogCategory}
+            onChange={(e) => {
+              setblogCategory(e.target.value);
+            }}
           >
             <option value="">--Select--</option>
             <option value="Technology">Technology</option>
@@ -146,31 +170,35 @@ const CreateBlog = () => {
             <option value="Database">Database</option>
           </select>
 
-          <label htmlFor="" className="block text-gray-700 font-medium mb-1">
+          {/* Description */}
+          <label className="block text-gray-700 font-medium mb-1">
             Blog Description
           </label>
+
           <div
-            className="w-full h-74 pb-16 sm:pb-10 relative
-                border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                "
+            className="w-full h-74 pb-16 sm:pb-10 relative border border-gray-300 rounded"
           >
             <div ref={EditorQuill}></div>
           </div>
 
-          <label htmlFor="" className="block text-gray-700 font-medium mb-1">
+          {/* Publish Action */}
+          <label className="block text-gray-700 font-medium mb-1">
             Action Publish
           </label>
+
           <select
-            name=""
-            id=""
             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e)=>{setblogAction(e.target.value)}}
+            value={blogAction}
+            onChange={(e) => {
+              setblogAction(e.target.value);
+            }}
           >
             <option value="">--Select--</option>
             <option value="Publish">Publish</option>
             <option value="Unpublish">Unpublish</option>
           </select>
 
+          {/* Button */}
           <div className="text-right">
             <button
               type="submit"
@@ -179,6 +207,7 @@ const CreateBlog = () => {
               Add Blog
             </button>
           </div>
+
         </form>
       </div>
     </div>

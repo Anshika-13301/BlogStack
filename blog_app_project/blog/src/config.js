@@ -1,1 +1,1 @@
-export const API_URL = "https://blogstack-backend-fy2l.onrender.com/";
+export const API_URL = "https://blogstack-backend-fy2l.onrender.com";

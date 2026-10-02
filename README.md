@@ -1,4 +1,4 @@
-# BlogStack 📝
+# BlogStack
 
 BlogStack is a full-stack blog website where users can read and explore blogs based on different categories.
 
